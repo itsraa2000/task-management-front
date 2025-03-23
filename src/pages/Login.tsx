@@ -1,89 +1,114 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom"; // Replaces Next.js router
-import { NavLink } from "react-router-dom"; // Replaces Next.js Link
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../components/ui/card";
-import { Label } from "../components/ui/label";
+import { useState } from "react"
+import { Link, useNavigate } from "react-router-dom"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
+import { useAuth } from "../contexts/useAuth"
+import { Button } from "../components/ui/button"
+import { Input } from "../components/ui/input"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../components/ui/card"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "../components/ui/form"
+import { Alert, AlertDescription } from "../components/ui/alert"
+import { Loader2 } from "lucide-react"
+
+const loginSchema = z.object({
+  username: z.string().min(1, "Username is required"),
+  password: z.string().min(1, "Password is required"),
+})
+
+type LoginFormValues = z.infer<typeof loginSchema>
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
-  const navigate = useNavigate(); // React Router replacement
+  const { login, error } = useAuth() as { login: (data: LoginFormValues) => Promise<void>; error?: string }
+  const [isLoading, setIsLoading] = useState(false)
+  const navigate = useNavigate()
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError("");
+  const form = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      username: "",
+      password: "",
+    },
+  })
 
+  const onSubmit = async (data: LoginFormValues) => {
+    setIsLoading(true)
     try {
-      // Simulated API authentication
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Store authentication status
-      localStorage.setItem("isAuthenticated", "true");
-
-      // Redirect to dashboard
-      navigate("/");
-    } catch {
-      setError("Invalid email or password");
+      await login(data)
+      navigate("/dashboard")
+    } catch (err) {
+      console.error("Login error:", err)
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   return (
-    <div className="flex items-center justify-center min-h-screen px-4">
+    <div className="flex items-center justify-center min-h-screen bg-gray-50">
       <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold">Login</CardTitle>
-          <CardDescription>Enter your credentials to access your account</CardDescription>
+        <CardHeader>
+          <CardTitle className="text-2xl text-center">Login</CardTitle>
+          <CardDescription className="text-center">Enter your credentials to access your account</CardDescription>
         </CardHeader>
-        <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
-            {error && <div className="bg-destructive/15 text-destructive text-sm p-3 rounded-md">{error}</div>}
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="name@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
+        <CardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              {error && (
+                <Alert variant="destructive">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
+              <FormField
+                control={form.control}
+                name="username"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Username</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter your username" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
-                <NavLink to="/forgot-password" className="text-sm text-primary hover:underline">
-                  Forgot password?
-                </NavLink>
-              </div>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
+
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <Input type="password" placeholder="Enter your password" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-          </CardContent>
-          <CardFooter className="flex flex-col mt-4">
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Logging in..." : "Login"}
-            </Button>
-            <p className="mt-4 text-center text-sm">
-              Don't have an account?{" "}
-              <NavLink to="/register" className="text-primary hover:underline">
-                Register
-              </NavLink>
-            </p>
-          </CardFooter>
-        </form>
+
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Logging in...
+                  </>
+                ) : (
+                  "Login"
+                )}
+              </Button>
+            </form>
+          </Form>
+        </CardContent>
+        <CardFooter className="flex justify-center">
+          <p className="text-sm text-gray-600">
+            Don't have an account?{" "}
+            <Link to="/register" className="text-blue-600 hover:underline">
+              Register
+            </Link>
+          </p>
+        </CardFooter>
       </Card>
     </div>
-  );
+  )
 }
