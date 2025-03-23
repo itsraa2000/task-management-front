@@ -19,7 +19,7 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
-              <Route path="/carlendar" element={<CalendarPage />} />
+              <Route path="/calendar" element={<CalendarPage />} />
               <Route path="/collaborations" element={<CollaborationsPage />} />
             </Routes>
           </main>
