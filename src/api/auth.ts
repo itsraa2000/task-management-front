@@ -55,20 +55,6 @@ export const authApi = {
     return response.data
   },
 
-  updateProfile: async (data: Partial<UserProfile>) => {
-    const response = await api.put<UserProfile>("/auth/profile/", data)
-    return response.data
-  },
-
-  changePassword: async (oldPassword: string, newPassword: string, confirmPassword: string) => {
-    const response = await api.post("/auth/change-password/", {
-      old_password: oldPassword,
-      new_password: newPassword,
-      confirm_password: confirmPassword,
-    })
-    return response.data
-  },
-
   searchUsers: async (query: string) => {
     const response = await api.get<UserProfile[]>(`/auth/search/?q=${query}`)
     return response.data
