@@ -127,19 +127,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     setUser(null);
   };
 
-  const updateProfile = async (data: Partial<UserProfile>) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const updatedUser = await authApi.updateProfile(data);
-      setUser(updatedUser);
-    } catch (err: unknown) {
-      setError("Failed to update profile");
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const value: AuthContextType = {
     user,
@@ -149,7 +136,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     login,
     register,
     logout,
-    updateProfile,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
