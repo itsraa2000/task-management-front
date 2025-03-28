@@ -13,6 +13,8 @@ export interface Task {
   updated_at: string
   owner: UserProfile
   collaborators: UserProfile[]
+  board_id: number | null
+  board_name: string | null
 }
 
 export interface CreateTaskData {
@@ -22,6 +24,7 @@ export interface CreateTaskData {
   status?: "todo" | "in-progress" | "done"
   start_date?: string
   end_date?: string
+  board_id?: number
 }
 
 export const tasksApi = {
@@ -56,6 +59,28 @@ export const tasksApi = {
 
   removeCollaborator: async (taskId: number, userId: number) => {
     const response = await api.post(`/tasks/${taskId}/remove_collaborator/`, { user_id: userId })
+    return response.data
+  },
+
+  getCalendarTasks: async (startDate?: string, endDate?: string) => {
+    let url = "/tasks/calendar/"
+    if (startDate || endDate) {
+      const params = new URLSearchParams()
+      if (startDate) params.append("start_date", startDate)
+      if (endDate) params.append("end_date", endDate)
+      url += `?${params.toString()}`
+    }
+    const response = await api.get<Task[]>(url)
+    return response.data
+  },
+
+  getUpcomingTasks: async () => {
+    const response = await api.get<Task[]>("/tasks/upcoming/")
+    return response.data
+  },
+
+  getTasksByBoard: async (boardId: number) => {
+    const response = await api.get<Task[]>(`/boards/${boardId}/tasks/`)
     return response.data
   },
 }
