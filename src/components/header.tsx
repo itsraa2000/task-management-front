@@ -9,14 +9,16 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
+  DropdownMenuPortal,
 } from "../components/ui/dropdown-menu";
+import { useAuth } from "../contexts/useAuth";
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const isLoggedIn = true; // In a real app, this would come from auth state
+  const { isAuthenticated, logout } = useAuth();
 
   return (
-    <header className="border-b">
+    <header className="border-b sticky top-0 bg-background z-50">
       <div className="container mx-auto px-4 py-3 flex items-center justify-between">
         <Link to="/" className="text-xl font-bold">
           TaskMaster
@@ -40,22 +42,24 @@ export default function Header() {
 
         <div className="hidden md:flex items-center space-x-4">
           <ModeToggle />
-          {isLoggedIn ? (
+          {isAuthenticated ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="rounded-full">
                   <User className="h-5 w-5" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                <DropdownMenuItem>
-                  <Link to="/login" className="flex w-full items-center">
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Logout
-                  </Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
+              <DropdownMenuPortal>
+                <DropdownMenuContent align="end" className="z-[9999]">
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuItem onClick={logout}>
+                    <div className="flex w-full items-center">
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Logout
+                    </div>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenuPortal>
             </DropdownMenu>
           ) : (
             <>
@@ -85,7 +89,7 @@ export default function Header() {
 
       {/* Mobile Menu */}
       {isMenuOpen && (
-        <div className="md:hidden border-t">
+        <div className="md:hidden border-t bg-background">
           <div className="container mx-auto px-4 py-3 flex flex-col space-y-3">
             <Link
               to="/"
@@ -110,12 +114,10 @@ export default function Header() {
             </Link>
             <div className="pt-3 border-t flex items-center justify-between">
               <ModeToggle />
-              {isLoggedIn ? (
-                <Button variant="outline" size="sm" asChild>
-                  <Link to="/login" className="flex items-center">
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Logout
-                  </Link>
+              {isAuthenticated ? (
+                <Button variant="outline" size="sm" onClick={logout}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Logout
                 </Button>
               ) : (
                 <div className="flex space-x-2">
