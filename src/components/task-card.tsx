@@ -1,5 +1,3 @@
-"use client"
-
 import { useState } from "react"
 import { format } from "date-fns"
 import type { Task } from "../lib/types"
