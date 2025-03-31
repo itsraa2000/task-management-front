@@ -118,12 +118,6 @@ export default function Header() {
             <Link to="/calendar" className="hover:text-primary transition-colors">
               Calendar
             </Link>
-            <Link
-              to="/collaborations"
-              className="hover:text-primary transition-colors"
-            >
-              Collaborations
-            </Link>
           </nav>
 
           <div className="hidden md:flex items-center space-x-4">
@@ -177,13 +171,6 @@ export default function Header() {
                 onClick={() => setIsMenuOpen(false)}
               >
                 Calendar
-              </Link>
-              <Link
-                to="/collaborations"
-                className="py-2 hover:text-primary transition-colors"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Collaborations
               </Link>
               <div className="pt-3 border-t flex items-center justify-between">
                 <CustomModeToggle />

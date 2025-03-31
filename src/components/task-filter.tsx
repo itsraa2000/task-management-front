@@ -1,5 +1,3 @@
-"use client"
-
 import type { Status, Priority } from "../lib/types"
 import type { Dispatch, SetStateAction } from "react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select"

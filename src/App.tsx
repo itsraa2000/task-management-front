@@ -10,10 +10,8 @@ import Header from "./components/header";
 import LoginPage from "./pages/Login";
 import RegisterPage from "./pages/Register";
 import CalendarPage from "./pages/Calendar";
-import CollaborationsPage from "./pages/Collaboration";
 import "./App.css";
 import { Toaster } from "react-hot-toast";
-import BoardSelectionPage from "./pages/Boardselection";
 import BoardsPage from "./pages/Boards";
 import NotFoundPage from "./pages/NotFoundPage";
 import { useAuth } from "./contexts/useAuth";
@@ -64,22 +62,6 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <CalendarPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/collaborations"
-            element={
-              <ProtectedRoute>
-                <CollaborationsPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/board-selection"
-            element={
-              <ProtectedRoute>
-                <BoardSelectionPage />
               </ProtectedRoute>
             }
           />
