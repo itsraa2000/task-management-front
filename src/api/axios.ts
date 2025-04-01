@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://localhost:8000/api/",
+  baseURL: "https://task-management-back-rt82.onrender.com/api/",
   headers: {
     "Content-Type": "application/json",
   },
@@ -41,7 +41,7 @@ api.interceptors.response.use(
       try {
         // Attempt to refresh token
         const { data } = await axios.post(
-          "http://localhost:8000/api/auth/token/refresh/",
+          "https://task-management-back-rt82.onrender.com/api/auth/token/refresh/",
           { refresh: refreshToken },
           {
             headers: {
