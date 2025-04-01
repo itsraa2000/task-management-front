@@ -296,7 +296,6 @@ export default function TaskDashboard() {
             <span>{board?.members_count} members</span>
           </div>
         </div>
-        <h1 className="text-3xl font-bold mb-4 md:mb-0">Task Dashboard</h1>
         <div className="flex gap-2">
           <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
             <DialogTrigger asChild>
