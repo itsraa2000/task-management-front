@@ -47,11 +47,6 @@ export const boardsApi = {
     await api.delete(`/boards/${id}/`)
   },
 
-  removeMember: async (boardId: number, userId: number) => {
-    const response = await api.post(`/boards/${boardId}/remove_member/`, { user_id: userId })
-    return response.data
-  },
-
   addTask: async (boardId: number, taskId: number) => {
     const response = await api.post(`/boards/${boardId}/add_task/`, { task_id: taskId })
     return response.data
