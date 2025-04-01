@@ -1,13 +1,12 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
-import type { Task, Priority, Status } from "../lib/types"
+import type { Task } from "../api/tasks"
 import { Button } from "../components/ui/button"
 import { Input } from "../components/ui/input"
 import { Textarea } from "../components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "../components/ui/card"
-import { X } from "lucide-react"
+import { Card, CardContent, CardFooter } from "../components/ui/card"
 
 interface TaskFormProps {
   onSubmit: (task: Task) => void
@@ -18,8 +17,8 @@ interface TaskFormProps {
 export default function TaskForm({ onSubmit, onCancel, initialData }: TaskFormProps) {
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
-  const [priority, setPriority] = useState<Priority>("medium")
-  const [status, setStatus] = useState<Status>("todo")
+  const [priority, setPriority] = useState<Task["priority"]>("medium")
+  const [status, setStatus] = useState<Task["status"]>("todo")
   const [startDate, setStartDate] = useState("")
   const [endDate, setEndDate] = useState("")
 
@@ -29,36 +28,35 @@ export default function TaskForm({ onSubmit, onCancel, initialData }: TaskFormPr
       setDescription(initialData.description || "")
       setPriority(initialData.priority)
       setStatus(initialData.status)
-      setStartDate(initialData.startDate || "")
-      setEndDate(initialData.endDate || "")
+      setStartDate(initialData.start_date || "")
+      setEndDate(initialData.end_date || "")
     }
   }, [initialData])
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-
+    e.preventDefault();
+  
     const task: Task = {
-      id: initialData?.id || "",
+      id: initialData?.id || 0,
       title,
-      description,
+      description: description || null,
       priority,
       status,
-      startDate: startDate || undefined,
-      endDate: endDate || undefined,
+      start_date: startDate || null,
+      end_date: endDate || null,
+      created_at: initialData?.created_at || new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      owner: initialData?.owner || { id: 0, username: "", email: "", first_name: "", last_name: "" },
       collaborators: initialData?.collaborators || [],
-    }
-
-    onSubmit(task)
-  }
+      board_id: initialData?.board_id || null,
+      board_name: initialData?.board_name || null,
+    };
+  
+    onSubmit(task);
+  };
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>{initialData ? "Edit Task" : "Create New Task"}</CardTitle>
-        <Button variant="ghost" size="icon" onClick={onCancel}>
-          <X className="h-4 w-4" />
-        </Button>
-      </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
           <div>
@@ -92,7 +90,7 @@ export default function TaskForm({ onSubmit, onCancel, initialData }: TaskFormPr
               <label htmlFor="priority" className="block text-sm font-medium mb-2">
                 Priority *
               </label>
-              <Select value={priority} onValueChange={(value) => setPriority(value as Priority)}>
+              <Select value={priority} onValueChange={(value) => setPriority(value as Task["priority"])}>
                 <SelectTrigger id="priority">
                   <SelectValue placeholder="Select priority" />
                 </SelectTrigger>
@@ -108,7 +106,7 @@ export default function TaskForm({ onSubmit, onCancel, initialData }: TaskFormPr
               <label htmlFor="status" className="block text-sm font-medium mb-2">
                 Status *
               </label>
-              <Select value={status} onValueChange={(value) => setStatus(value as Status)}>
+              <Select value={status} onValueChange={(value) => setStatus(value as Task["status"])}>
                 <SelectTrigger id="status">
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
@@ -138,7 +136,7 @@ export default function TaskForm({ onSubmit, onCancel, initialData }: TaskFormPr
           </div>
         </CardContent>
 
-        <CardFooter className="flex justify-end space-x-2">
+        <CardFooter className="flex justify-end space-x-2 mt-6">
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancel
           </Button>

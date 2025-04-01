@@ -15,6 +15,7 @@ export interface Board {
   owner: UserProfile
   members: BoardMember[]
   task_count: number
+  members_count: number
 }
 
 export interface CreateBoardData {
@@ -67,5 +68,14 @@ export const boardsApi = {
   removeTask: async (boardId: number, taskId: number) => {
     const response = await api.post(`/boards/${boardId}/remove_task/`, { task_id: taskId })
     return response.data
+  },
+
+  inviteUser: async (boardId: number, email: string, role: "admin" | "member") => {
+    const response = await api.post(`/invitations/invite/`, {
+      board_id: boardId,
+      invitee_email: email,
+      role,
+    });
+    return response.data;
   },
 }
