@@ -57,11 +57,6 @@ export const tasksApi = {
     return response.data
   },
 
-  removeCollaborator: async (taskId: number, userId: number) => {
-    const response = await api.post(`/tasks/${taskId}/remove_collaborator/`, { user_id: userId })
-    return response.data
-  },
-
   getCalendarTasks: async (startDate?: string, endDate?: string) => {
     let url = "/tasks/calendar/"
     if (startDate || endDate) {
@@ -71,11 +66,6 @@ export const tasksApi = {
       url += `?${params.toString()}`
     }
     const response = await api.get<Task[]>(url)
-    return response.data
-  },
-
-  getUpcomingTasks: async () => {
-    const response = await api.get<Task[]>("/tasks/upcoming/")
     return response.data
   },
 

@@ -47,14 +47,6 @@ export const boardsApi = {
     await api.delete(`/boards/${id}/`)
   },
 
-  addMember: async (boardId: number, userId: number, role: "admin" | "member" = "member") => {
-    const response = await api.post(`/boards/${boardId}/add_member/`, {
-      user_id: userId,
-      role,
-    })
-    return response.data
-  },
-
   removeMember: async (boardId: number, userId: number) => {
     const response = await api.post(`/boards/${boardId}/remove_member/`, { user_id: userId })
     return response.data
