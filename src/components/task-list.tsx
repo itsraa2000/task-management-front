@@ -1,32 +1,42 @@
-import type { Task } from "../lib/types"
-import TaskCard from "./task-card"
+import type { Task } from "../api/tasks";
+import TaskCard from "./task-card"; // ✅ Import your TaskCard component
 
 interface TaskListProps {
-  title: string
-  tasks: Task[]
-  onEdit: (task: Task) => void
-  onDelete: (taskId: string) => void
-  onStatusChange: (task: Task) => void
+  title: string;
+  tasks: Task[];
+  onEdit: (task: Task) => void;
+  onDelete: (taskId: number) => void;
+  onStatusChange: (task: Task) => void;
+  nextStatusLabel: string; // ✅ Not used anymore (handled in TaskCard)
 }
 
-export default function TaskList({ title, tasks, onEdit, onDelete, onStatusChange }: TaskListProps) {
+export default function TaskList({
+  title,
+  tasks,
+  onEdit,
+  onDelete,
+  onStatusChange,
+}: TaskListProps) {
   return (
-    <div className="bg-card rounded-lg shadow-sm border p-4">
-      <h2 className="text-xl font-semibold mb-4 flex items-center justify-between">
-        {title}
-        <span className="text-sm font-normal bg-primary/10 text-primary px-2 py-1 rounded">{tasks.length}</span>
-      </h2>
-
-      <div className="space-y-3">
+    <div>
+      <h2 className="text-xl font-semibold mb-4">{title}</h2>
+      <div className="space-y-4">
         {tasks.length === 0 ? (
-          <p className="text-muted-foreground text-center py-8">No tasks</p>
+          <p className="text-gray-500 text-center py-8 border border-dashed rounded-lg">
+            No tasks in this column
+          </p>
         ) : (
           tasks.map((task) => (
-            <TaskCard key={task.id} task={task} onEdit={onEdit} onDelete={onDelete} onStatusChange={onStatusChange} />
+            <TaskCard
+              key={task.id}
+              task={task}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              onStatusChange={onStatusChange}
+            />
           ))
         )}
       </div>
     </div>
-  )
+  );
 }
-

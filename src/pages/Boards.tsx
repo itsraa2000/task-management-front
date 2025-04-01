@@ -1,18 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import {
-  DragDropContext,
-  Droppable,
-  Draggable,
-  DropResult,
-} from "react-beautiful-dnd";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "../components/ui/card";
+import TaskList from "../components/task-list";
+import TaskForm from "../components/task-form";
+import TaskFilters from "../components/task-filter";
 import { Button } from "../components/ui/button";
+import { Plus, UserPlus } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -20,162 +12,194 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "../components/ui/dialog";
-import { useToast } from "../hooks/use-toast";
-import { boardsApi, type Board } from "../api/boards";
+import { Users, ArrowLeft } from "lucide-react";
+import type { Priority, Status } from "../lib/types";
 import { tasksApi, type Task, type CreateTaskData } from "../api/tasks";
-import { authApi } from "../api/auth";
-import {
-  PlusCircle,
-  MoreHorizontal,
-  Users,
-  UserPlus,
-  ArrowLeft,
-} from "lucide-react";
-import { useAuth } from "../contexts/useAuth";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "../components/ui/dropdown-menu";
-
-// Import components
-import TaskForm from "../components/task-form";
+import { useToast } from "../hooks/use-toast";
 import InviteUserForm from "../components/boards/invite-user-form";
+import { authApi } from "../api/auth";
+import { boardsApi, type Board } from "../api/boards";
+import { useAuth } from "../contexts/useAuth";
 
-export default function BoardsPage() {
-  const { boardId } = useParams<{ boardId: string }>();
-  const [board, setBoard] = useState<Board | null>(null);
+export default function TaskDashboard() {
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
+  const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
+  const [isFormOpen, setIsFormOpen] = useState(false);
   const [isInviteFormOpen, setIsInviteFormOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [statusFilter, setStatusFilter] = useState<Status | "all">("all");
+  const [priorityFilter, setPriorityFilter] = useState<Priority | "all">("all");
+  const [loading, setLoading] = useState(true);
   const toast = useToast();
   const navigate = useNavigate();
+  const { boardId } = useParams<{ boardId: string }>();
+  const [board, setBoard] = useState<Board | null>(null);
+
+  const [dataFetched, setDataFetched] = useState(false);
+
   const { user } = useAuth();
 
-  
-  const showToast = useCallback((errorMessage: string) => {
-    toast({
-      title: "Error",
-      description: errorMessage,
-      type: "error",
-    });
-  }, [toast]);
+  const showToast = useCallback(
+    (
+      title: string,
+      description: string,
+      type: "success" | "error" | "info" | "loading" = "success"
+    ) => {
+      toast({
+        title,
+        description,
+        type,
+      });
+    },
+    [toast]
+  );
 
-  useEffect(() => {
-    if (!boardId) {
-      navigate("/dashboard");
+  const fetchBoardData = useCallback(async () => {
+    if (!boardId || dataFetched) {
       return;
     }
-  
-    const fetchBoardData = async () => {
-      try {
-        setLoading(true);
-        const boardData = await boardsApi.getBoard(Number.parseInt(boardId));
-        if (!boardData) {
-          throw new Error("Board not found");
-        }
-  
-        const tasksData = await tasksApi.getTasks();
-        const boardTasks = tasksData.filter(
-          (task) => task.board_id === Number.parseInt(boardId)
-        );
-  
-        setBoard((prev) => (JSON.stringify(prev) === JSON.stringify(boardData) ? prev : boardData));
-        setTasks((prev) => (JSON.stringify(prev) === JSON.stringify(boardTasks) ? prev : boardTasks));
-      } catch (error) {
-        console.error("Error fetching board data:", error);
-        showToast("Failed to load board data. Please try again.");
-        navigate("/dashboard");
-      } finally {
-        setLoading(false);
-      }
-    };
-  
-    fetchBoardData();
-  }, [boardId, navigate, showToast]); 
-
-  const handleDragEnd = async (result: DropResult) => {
-    if (!result.destination) return;
-
-    const { source, destination, draggableId } = result;
-    if (source.droppableId === destination.droppableId) return;
-
-    const taskId = Number.parseInt(draggableId);
-    const newStatus = destination.droppableId as
-      | "todo"
-      | "in-progress"
-      | "done";
-
-    // Store previous tasks in case of failure
-    const prevTasks = [...tasks];
-
-    // Optimistic UI update
-    setTasks((prev) =>
-      prev.map((task) =>
-        task.id === taskId ? { ...task, status: newStatus } : task
-      )
-    );
 
     try {
-      await tasksApi.updateTask(taskId, { status: newStatus });
-      toast({
-        title: "Task updated",
-        description: "Task status updated successfully.",
-      });
+      setLoading(true);
+      const boardData = await boardsApi.getBoard(Number.parseInt(boardId));
+      if (!boardData) {
+        throw new Error("Board not found");
+      }
+
+      console.log("Fetched board data:", boardData);
+      setBoard(boardData);
+
+      // Fetch the tasks for this board
+      const tasksData = await tasksApi.getTasksByBoard(
+        Number.parseInt(boardId)
+      );
+      console.log("Fetched tasks data:", tasksData);
+      setTasks(tasksData);
+
+      setDataFetched(true);
     } catch (error) {
-      console.error("Error updating task:", error);
-      setTasks(prevTasks); // Revert UI on failure
-      toast({
-        title: "Error",
-        description: "Failed to update task status.",
-        type: "error",
+      console.error("Error fetching board data:", error);
+      showToast("Error", "Something went wrong. Please try again.");
+      navigate("/dashboard");
+    } finally {
+      setLoading(false);
+    }
+  }, [boardId, dataFetched, navigate, showToast]);
+
+  useEffect(() => {
+    fetchBoardData();
+  }, [fetchBoardData]);
+
+  useEffect(() => {
+    let filtered = [...tasks];
+
+    if (statusFilter !== "all") {
+      filtered = filtered.filter((task) => task.status === statusFilter);
+    }
+
+    if (priorityFilter !== "all") {
+      filtered = filtered.filter((task) => task.priority === priorityFilter);
+    }
+
+    setFilteredTasks(filtered);
+  }, [tasks, statusFilter, priorityFilter]);
+
+  const handleCreateTask = async (taskData: CreateTaskData) => {
+    if (!board) {
+      showToast("Error", "Board not found. Please try again.", "error");
+      return;
+    }
+    try {
+      await tasksApi.createTask({
+        ...taskData,
+        board_id: board?.id,
+        description: taskData.description ?? undefined,
       });
+
+      setIsFormOpen(false);
+      showToast("Success", "Task created successfully");
+
+      setDataFetched(false);
+      fetchBoardData();
+    } catch (error) {
+      console.error("Error creating task:", error);
+      showToast("Error", "Failed to create task. Please try again.", "error");
     }
   };
 
- const handleCreateTask = async (taskData: CreateTaskData) => {
-    try {
-      if (!board) {
-        toast({
-          title: "Error",
-          description: "Board is required to create a task.",
-          type: "error",
-        });
-        return;
-      }
-
-      const newTask = await tasksApi.createTask({
-        ...taskData,
-        status: "todo",
-        board_id: board.id, // Include board_id
-      });
-
-      // Update tasks list
-      setTasks((prev) => [...prev, newTask]);
-
-      setIsTaskFormOpen(false);
-      toast({
-        title: "Task created",
-        description: "New task has been created successfully.",
-      });
-    } catch (error) {
-      console.error("Error creating task:", error);
-      toast({
-        title: "Error",
-        description: "Failed to create task. Please try again.",
-        type: "error",
-      });
+  const handleUpdateTask = async (
+    taskData: CreateTaskData & { id: number }
+  ) => {
+    if (!board) {
+      showToast("Error", "Board not found. Please try again.", "error");
+      return;
     }
-};
+
+    try {
+      const updatedTask = await tasksApi.updateTask(taskData.id, {
+        ...taskData,
+        board_id: board.id,
+        title: taskData.title,
+        description: taskData.description ?? undefined,
+      });
+
+      setTasks(tasks.map((t) => (t.id === updatedTask.id ? updatedTask : t)));
+      showToast("Success", "Task updated successfully");
+    } catch (error) {
+      console.error("Error updating task:", error);
+      showToast("Error", "Failed to update task. Please try again.", "error");
+    }
+  };
+
+  const handleDeleteTask = async (taskId: number) => {
+    try {
+      await tasksApi.deleteTask(taskId);
+      setTasks(tasks.filter((task) => task.id !== taskId));
+      showToast("Success", "Task deleted successfully");
+    } catch (error) {
+      console.error("Error deleting task:", error);
+      showToast("Error", "Failed to delete task. Please try again.", "error");
+    }
+  };
+
+  const handleEditTask = (task: Task) => {
+    setEditingTask(task);
+  };
+
+  const handleStatusChange = async (
+    task: Task,
+    newStatus: "todo" | "in-progress" | "done"
+  ) => {
+    try {
+      const updatedTask = await tasksApi.updateTask(task.id, {
+        status: newStatus,
+      });
+      setTasks(tasks.map((t) => (t.id === updatedTask.id ? updatedTask : t)));
+      showToast("Success", "Task status updated successfully");
+    } catch (error) {
+      console.error("Error updating task status:", error);
+      showToast(
+        "Error",
+        "Failed to update task status. Please try again.",
+        "error"
+      );
+    }
+  };
 
   const handleInviteUser = async (data: {
     email: string;
     role: "admin" | "member";
+    taskId?: number;
   }) => {
     try {
-      if (!board) return;
+      if (!board) {
+        toast({
+          title: "Error",
+          description: "Board data is not available. Please try again later.",
+          type: "error",
+        });
+        return;
+      }
 
       const users = await authApi.searchUsers(data.email);
       if (users.length === 0) {
@@ -189,28 +213,21 @@ export default function BoardsPage() {
 
       const userToInvite = users[0];
 
-      const isMember = board.members.some(
-        (member) => member.user.id === userToInvite.id
-      );
-      if (isMember) {
+      if (data.taskId) {
+        await tasksApi.addCollaborator(data.taskId, userToInvite.id);
         toast({
-          title: "Already a member",
-          description: `${userToInvite.username} is already a member of this board`,
-          type: "error",
+          title: "Collaborator Added",
+          description: `${userToInvite.username} has been added to the task.`,
         });
-        return;
+      } else {
+        await boardsApi.inviteUser(board.id, userToInvite.email, data.role);
+        toast({
+          title: "Invitation Sent",
+          description: `${userToInvite.username} has been invited to the board.`,
+        });
       }
 
-      await boardsApi.addMember(board.id, userToInvite.id, data.role);
-
-      const updatedBoard = await boardsApi.getBoard(board.id);
-      setBoard(updatedBoard);
-
       setIsInviteFormOpen(false);
-      toast({
-        title: "User invited",
-        description: `${userToInvite.username} has been added to the board`,
-      });
     } catch (error) {
       console.error("Error inviting user:", error);
       toast({
@@ -221,6 +238,39 @@ export default function BoardsPage() {
     }
   };
 
+  const handleDeleteBoard = async () => {
+    if (!board) {
+      showToast("Error", "Board not found. Please try again.", "error");
+      return;
+    }
+
+    if (board.owner.id !== user?.id) {
+      showToast(
+        "Error",
+        "You don't have permission to delete this board.",
+        "error"
+      );
+      return;
+    }
+
+    try {
+      await boardsApi.deleteBoard(board.id);
+      showToast("Success", "Board deleted successfully.");
+      navigate("/dashboard"); // Redirect after deletion
+    } catch (error) {
+      console.error("Error deleting board:", error);
+      showToast("Error", "Failed to delete board. Please try again.", "error");
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        Loading tasks...
+      </div>
+    );
+  }
+
   const isOwner = board?.owner.id === user?.id;
   const isAdmin =
     board?.members?.some(
@@ -228,29 +278,9 @@ export default function BoardsPage() {
         member.user.id === user?.id && ["admin", "owner"].includes(member.role)
     ) ?? false;
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        Loading board...
-      </div>
-    );
-  }
-
-  if (!board) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        Board not found
-      </div>
-    );
-  }
-
-  const todoTasks = tasks.filter((task) => task.status === "todo");
-  const inProgressTasks = tasks.filter((task) => task.status === "in-progress");
-  const doneTasks = tasks.filter((task) => task.status === "done");
-
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-8">
         <div>
           <Button
             variant="ghost"
@@ -260,184 +290,132 @@ export default function BoardsPage() {
             <ArrowLeft className="h-4 w-4 mr-1" />
             Back to Boards
           </Button>
-          <h1 className="text-3xl font-bold">{board.name}</h1>
+          <h1 className="text-3xl font-bold">{board?.name}</h1>
           <div className="flex items-center mt-2 text-gray-500">
             <Users className="h-4 w-4 mr-1" />
-            <span>{board.members?.length || 0} members</span>
+            <span>{board?.members_count} members</span>
           </div>
         </div>
-
         <div className="flex gap-2">
-          <Dialog open={isTaskFormOpen} onOpenChange={setIsTaskFormOpen}>
+          <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
             <DialogTrigger asChild>
               <Button>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Add Task
+                <Plus className="mr-2 h-4 w-4" /> Add Task
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[500px]">
               <DialogHeader>
-                <DialogTitle>Create New Task</DialogTitle>
+                <DialogTitle>
+                  {editingTask ? "Edit Task" : "Create New Task"}
+                </DialogTitle>
               </DialogHeader>
               <TaskForm
-                onSubmit={handleCreateTask}
-                onCancel={() => setIsTaskFormOpen(false)}
+                onSubmit={(data: CreateTaskData | Task) =>
+                  editingTask
+                    ? handleUpdateTask({
+                        ...data,
+                        description: data.description || undefined,
+                      } as CreateTaskData & { id: number })
+                    : handleCreateTask(data as CreateTaskData)
+                }
+                onCancel={() => {
+                  setIsFormOpen(false);
+                  setEditingTask(null);
+                }}
+                initialData={editingTask}
               />
             </DialogContent>
           </Dialog>
-
           {(isOwner || isAdmin) && (
-            <Dialog open={isInviteFormOpen} onOpenChange={setIsInviteFormOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline">
-                  <UserPlus className="mr-2 h-4 w-4" />
-                  Invite
+            <>
+              <Dialog
+                open={isInviteFormOpen}
+                onOpenChange={setIsInviteFormOpen}
+              >
+                <DialogTrigger asChild>
+                  <Button variant="outline">
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    Invite
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[500px]">
+                  <DialogHeader>
+                    <DialogTitle>Invite User to Board</DialogTitle>
+                  </DialogHeader>
+                  <InviteUserForm
+                    onSubmit={handleInviteUser}
+                    onCancel={() => setIsInviteFormOpen(false)}
+                  />
+                </DialogContent>
+              </Dialog>
+              {isOwner && (
+                <Button variant="destructive" onClick={handleDeleteBoard}>
+                  Delete Board
                 </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[500px]">
-                <DialogHeader>
-                  <DialogTitle>Invite User to Board</DialogTitle>
-                </DialogHeader>
-                <InviteUserForm
-                  onSubmit={handleInviteUser}
-                  onCancel={() => setIsInviteFormOpen(false)}
-                />
-              </DialogContent>
-            </Dialog>
+              )}
+            </>
           )}
+
+          <Dialog
+            open={!!editingTask}
+            onOpenChange={(open) => !open && setEditingTask(null)}
+          >
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle>Edit Task</DialogTitle>
+              </DialogHeader>
+              {editingTask && (
+                <TaskForm
+                  initialData={editingTask}
+                  onSubmit={(updatedTask) => {
+                    setTasks((prevTasks) =>
+                      prevTasks.map((task) =>
+                        task.id === updatedTask.id ? updatedTask : task
+                      )
+                    );
+                    setEditingTask(null); // Close dialog after update
+                  }}
+                  onCancel={() => setEditingTask(null)}
+                />
+              )}
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
-      {/* Board Members */}
-      <div className="mb-6">
-        <h2 className="text-lg font-semibold mb-3">Tasks</h2>
-        <DragDropContext onDragEnd={handleDragEnd}>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Droppable droppableId="todo">
-              {(provided) => (
-                <div {...provided.droppableProps} ref={provided.innerRef}>
-                  <h3 className="font-medium mb-2">To Do</h3>
-                  {todoTasks.map((task, index) => (
-                    <Draggable key={task.id} draggableId={task.id.toString()} index={index}>
-                      {(provided) => (
-                        <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
-                          <TaskCard key={task.id} task={task} />
-                        </div>
-                      )}
-                    </Draggable>
-                  ))}
-                  {provided.placeholder}
-                </div>
-              )}
-            </Droppable>
+      <TaskFilters
+        statusFilter={statusFilter}
+        priorityFilter={priorityFilter}
+        onStatusFilterChange={setStatusFilter}
+        onPriorityFilterChange={setPriorityFilter}
+      />
 
-            <Droppable droppableId="in-progress">
-              {(provided) => (
-                <div {...provided.droppableProps} ref={provided.innerRef}>
-                  <h3 className="font-medium mb-2">In Progress</h3>
-                  {inProgressTasks.map((task, index) => (
-                    <Draggable key={task.id} draggableId={task.id.toString()} index={index}>
-                      {(provided) => (
-                        <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
-                          <TaskCard key={task.id} task={task} />
-                        </div>
-                      )}
-                    </Draggable>
-                  ))}
-                  {provided.placeholder}
-                </div>
-              )}
-            </Droppable>
-
-            <Droppable droppableId="done">
-              {(provided) => (
-                <div {...provided.droppableProps} ref={provided.innerRef}>
-                  <h3 className="font-medium mb-2">Done</h3>
-                  {doneTasks.map((task, index) => (
-                    <Draggable key={task.id} draggableId={task.id.toString()} index={index}>
-                      {(provided) => (
-                        <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
-                          <TaskCard key={task.id} task={task} />
-                        </div>
-                      )}
-                    </Draggable>
-                  ))}
-                  {provided.placeholder}
-                </div>
-              )}
-            </Droppable>
-          </div>
-        </DragDropContext>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
+        <TaskList
+          title="To Do"
+          tasks={filteredTasks.filter((task) => task.status === "todo")}
+          onEdit={handleEditTask}
+          onDelete={handleDeleteTask}
+          onStatusChange={(task) => handleStatusChange(task, "in-progress")}
+          nextStatusLabel="Move to In Progress"
+        />
+        <TaskList
+          title="In Progress"
+          tasks={filteredTasks.filter((task) => task.status === "in-progress")}
+          onEdit={handleEditTask}
+          onDelete={handleDeleteTask}
+          onStatusChange={(task) => handleStatusChange(task, "done")}
+          nextStatusLabel="Move to Done"
+        />
+        <TaskList
+          title="Done"
+          tasks={filteredTasks.filter((task) => task.status === "done")}
+          onEdit={handleEditTask}
+          onDelete={handleDeleteTask}
+          onStatusChange={(task) => handleStatusChange(task, "todo")}
+          nextStatusLabel="Move to To Do"
+        />
       </div>
     </div>
-  );
-}
-
-// Task Card Component
-function TaskCard({ task }: { task: Task }): JSX.Element {
-  const priorityColors = {
-    low: "bg-blue-100 text-blue-800",
-    medium: "bg-yellow-100 text-yellow-800",
-    high: "bg-red-100 text-red-800",
-  };
-
-  const handleViewTask = () => {
-    console.log("View task:", task.id);
-  };
-
-  const handleEditTask = () => {
-    console.log("Edit task:", task.id);
-  };
-
-  const handleDeleteTask = () => {
-    console.log("Delete task:", task.id);
-  };
-
-  return (
-    <Card className="shadow-sm hover:shadow-md transition-shadow">
-      <CardHeader className="p-4 pb-2">
-        <div className="flex justify-between items-start">
-          <CardTitle className="text-base font-medium">{task.title}</CardTitle>
-          <div className="flex items-center gap-2">
-            <div className={`px-2 py-1 rounded text-xs font-medium ${priorityColors[task.priority]}`}>
-              {task.priority}
-            </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={handleViewTask}>View Details</DropdownMenuItem>
-                <DropdownMenuItem onClick={handleEditTask}>Edit Task</DropdownMenuItem>
-                <DropdownMenuItem onClick={handleDeleteTask} className="text-red-600">Delete Task</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="p-4 pt-2">
-        {task.description && (
-          <p className="text-sm text-gray-600 line-clamp-2 mb-2">{task.description}</p>
-        )}
-        <div className="flex justify-between items-center mt-2">
-          <div className="flex items-center">
-            <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-xs font-medium text-white">
-              {task.owner.first_name[0]}
-              {task.owner.last_name[0]}
-            </div>
-            {task.collaborators.length > 0 && (
-              <div className="ml-1 text-xs text-gray-500">+{task.collaborators.length}</div>
-            )}
-          </div>
-          {task.end_date && (
-            <div className="text-xs text-gray-500">
-              Due: {new Date(task.end_date).toLocaleDateString()}
-            </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
   );
 }

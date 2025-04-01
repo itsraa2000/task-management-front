@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useNavigate } from "react-router-dom";
 import {
   format,
   startOfMonth,
@@ -15,7 +16,7 @@ import { Button } from "../components/ui/button"
 import { ChevronLeft, ChevronRight, CalendarIcon } from "lucide-react"
 import type { Task } from "../api/tasks"
 import { tasksApi } from "../api/tasks"
-import { boardsApi, type Board } from "../api/boards"
+import { boardsApi } from "../api/boards"
 import { useEffect } from "react"
 import { Skeleton } from "../components/ui/skeleton"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../components/ui/tooltip"
@@ -23,16 +24,15 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../com
 export default function CalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [tasks, setTasks] = useState<Task[]>([])
-  const [boards, setBoards] = useState<Board[]>([])
   const [loading, setLoading] = useState(true)
+  const navigate = useNavigate()
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true)
-        const [tasksData, boardsData] = await Promise.all([tasksApi.getTasks(), boardsApi.getBoards()])
+        const [tasksData] = await Promise.all([tasksApi.getTasks(), boardsApi.getBoards()])
         setTasks(tasksData)
-        setBoards(boardsData)
       } catch (error) {
         console.error("Error fetching calendar data:", error)
       } finally {
@@ -56,28 +56,6 @@ export default function CalendarPage() {
       const taskDate = new Date(task.start_date)
       return isSameDay(taskDate, day)
     })
-  }
-
-  const getBoardNameForTask = (task: Task): string => {
-    // In the API, we don't have direct access to which board a task belongs to
-    // We need to use the board's task_count or another approach
-
-    // Since we don't have a direct relationship in the Board type,
-    // we'll need to check if the task is associated with a board through the board's API
-    // This is a workaround until we have a proper relationship
-
-    // For now, we'll use the task's owner to try to match with a board's owner
-    const possibleBoards = boards.filter((board) => board.owner.id === task.owner.id)
-
-    if (possibleBoards.length === 1) {
-      return possibleBoards[0].name
-    } else if (possibleBoards.length > 1) {
-      // If there are multiple boards by the same owner, we'll just return the first one
-      // In a real app, you would want to store the boardId on the task
-      return possibleBoards[0].name + " (Likely)"
-    }
-
-    return "Unknown Board"
   }
 
   const getPriorityColor = (priority: string) => {
@@ -176,15 +154,15 @@ export default function CalendarPage() {
                   <div className="space-y-1 overflow-y-auto max-h-[calc(100%-20px)]">
                     <TooltipProvider>
                       {dayTasks.map((task) => (
-                        <Tooltip key={task.id}>
-                          <TooltipTrigger asChild>
+                        <Tooltip key={task.id} >
+                          <TooltipTrigger asChild  onClick={() => navigate(`/boards/${task.board_id}`)}>
                             <div className="text-xs p-1 rounded truncate flex flex-col bg-gray-50 hover:bg-gray-100 cursor-pointer border border-gray-200">
                               <div className="flex items-center">
                                 <span className={`w-2 h-2 rounded-full mr-1 ${getPriorityColor(task.priority)}`}></span>
-                                <span className="font-medium truncate">{task.title}</span>
+                                <span className="font-medium truncate">{task.board_name}</span>
                               </div>
                               <div className="flex justify-between text-[10px] text-gray-500 mt-0.5">
-                                <span className="truncate max-w-[60%]">{getBoardNameForTask(task)}</span>
+                                <span className="truncate max-w-[60%]">{task.board_name + " - " + task.title}</span>
                                 {task.end_date && <span>Due: {format(new Date(task.end_date), "MM/dd")}</span>}
                               </div>
                             </div>
@@ -195,7 +173,7 @@ export default function CalendarPage() {
                               <p className="text-xs mt-1">{task.description || "No description"}</p>
                               <div className="mt-2 text-xs">
                                 <p>
-                                  <span className="font-semibold">Board:</span> {getBoardNameForTask(task)}
+                                  <span className="font-semibold">Board:</span> {task.board_name + " - " + task.title}
                                 </p>
                                 <p>
                                   <span className="font-semibold">Priority:</span> {task.priority}

@@ -147,9 +147,6 @@ export default function DashboardPage() {
                 <p className="text-gray-500 mb-4">
                   You don't have any tasks yet.
                 </p>
-                <Button onClick={() => navigate("/board-selection")}>
-                  Go to Board Selection
-                </Button>
               </div>
             </CardContent>
           </Card>
@@ -227,9 +224,26 @@ export default function DashboardPage() {
                 <p className="text-gray-500 mb-4">
                   You don't have any boards yet.
                 </p>
-                <Button onClick={() => navigate("/board-selection")}>
-                  Create a Board
-                </Button>
+                <Dialog
+                  open={isBoardFormOpen}
+                  onOpenChange={setIsBoardFormOpen}
+                >
+                  <DialogTrigger asChild>
+                    <Button>
+                      <PlusCircle className="mr-2 h-4 w-4" />
+                      Create New Board
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[500px]">
+                    <DialogHeader>
+                      <DialogTitle>Create New Board</DialogTitle>
+                    </DialogHeader>
+                    <BoardForm
+                      onSubmit={handleCreateBoard}
+                      onCancel={() => setIsBoardFormOpen(false)}
+                    />
+                  </DialogContent>
+                </Dialog>
               </div>
             </CardContent>
           </Card>
@@ -249,7 +263,7 @@ export default function DashboardPage() {
                 <CardContent>
                   <div className="flex items-center text-sm text-gray-500">
                     <Users className="mr-2 h-4 w-4" />
-                    <span>{board?.members?.length || 0} members</span>
+                    <span>{board.members_count} members</span>
                   </div>
                 </CardContent>
                 <CardFooter>

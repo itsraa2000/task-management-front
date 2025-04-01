@@ -34,43 +34,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     checkAuth();
   }, []);
 
-  // useEffect(() => {
-  //   const checkAuth = async () => {
-  //     if (process.env.NODE_ENV === "development") {
-  //       // Mock user in development mode
-  //       setUser({
-  //         id: 1,
-  //         username: "testuser",
-  //         email: "test@example.com",
-  //         first_name: "Test",
-  //         last_name: "User",
-  //         profile: {
-  //           bio: "This is a test user",
-  //           avatar: "https://via.placeholder.com/150",
-  //         },
-  //       });
-  //       setLoading(false);
-  //       return;
-  //     }
-
-  //     // Normal authentication flow
-  //     try {
-  //       if (localStorage.getItem("accessToken")) {
-  //         const userData = await authApi.getCurrentUser();
-  //         setUser(userData);
-  //       }
-  //     } catch (err) {
-  //       console.error("Authentication check failed:", err);
-  //       localStorage.removeItem("accessToken");
-  //       localStorage.removeItem("refreshToken");
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   };
-
-  //   checkAuth();
-  // }, []);
-
   const handleApiError = (err: unknown): string => {
     if (
       typeof err === "object" &&
