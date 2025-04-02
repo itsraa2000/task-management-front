@@ -10,7 +10,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "../components/ui/form"
 import { Alert, AlertDescription } from "../components/ui/alert"
 import { Loader2 } from "lucide-react"
-import { tasksApi } from "../api/tasks"
 
 const loginSchema = z.object({
   username: z.string().min(1, "Username is required"),
@@ -32,15 +31,6 @@ export default function LoginPage() {
     },
   })
 
-  const handleTestApi = async () => {
-    try {
-      const response = await tasksApi.getTest()
-      console.log("API Response:", response)
-    } catch (error) {
-      console.error("Error calling test API:", error)
-    }
-  }
-
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true)
     try {
@@ -57,7 +47,7 @@ export default function LoginPage() {
     <div className="flex items-center justify-center min-h-screen bg-oklch(0.145 0 0)">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle className="text-2xl text-center"  onClick={handleTestApi}>Login</CardTitle>
+          <CardTitle className="text-2xl text-center">Login</CardTitle>
           <CardDescription className="text-center">Enter your credentials to access your account</CardDescription>
         </CardHeader>
         <CardContent>
