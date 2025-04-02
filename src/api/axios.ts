@@ -40,7 +40,7 @@ api.interceptors.response.use(
       try {
         // Attempt to refresh token
         const { data } = await axios.post(
-          "https://task-management-back-rt82.onrender.comZZ/api/auth/token/refresh/",
+          "https://task-management-back-rt82.onrender.com/api/auth/token/refresh/",
           { refresh: refreshToken },
           {
             headers: {
