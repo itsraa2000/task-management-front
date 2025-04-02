@@ -32,12 +32,7 @@ export const tasksApi = {
     const response = await api.get<Task[]>("/tasks/")
     return response.data
   },
-
-  getTest: async () => {
-    const response = await api.get<Task[]>("/tasks/test_api/")
-    return response.data
-  },
-
+  
   getTask: async (id: number) => {
     const response = await api.get<Task>(`/tasks/${id}/`)
     return response.data
