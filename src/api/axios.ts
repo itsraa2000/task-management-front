@@ -34,14 +34,13 @@ api.interceptors.response.use(
       if (!refreshToken) {
         console.warn("No refresh token found, redirecting to login...");
         localStorage.removeItem("accessToken");
-        window.location.href = "/login";
         return Promise.reject(error);
       }
 
       try {
         // Attempt to refresh token
         const { data } = await axios.post(
-          "https://task-management-back-rt82.onrender.com/api/auth/token/refresh/",
+          "https://task-management-back-rt82.onrender.comZZ/api/auth/token/refresh/",
           { refresh: refreshToken },
           {
             headers: {
