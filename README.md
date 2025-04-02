@@ -59,12 +59,7 @@ cd task-management-front
 npm install
 ```
 
-3. Create a `.env` file in the root directory:
-```env
-VITE_API_URL=your_api_url
-```
-
-4. Start the development server:
+3. Start the development server:
 ```bash
 npm run dev
 ```
