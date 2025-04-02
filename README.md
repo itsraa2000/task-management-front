@@ -43,7 +43,12 @@ src/
 ├── lib/            # Utility functions and types
 │   └── types.ts    # Shared type definitions
 └── pages/          # Page components
-    └── Boards.tsx  # Main board view
+    └── Boards.tsx  # Main Board page
+    └── Calendar.tsx  # Main Caledar page
+    └── Dashboard.tsx  # Main Dashboard page
+    └── Login.tsx  # Main Login Page
+    └── NotFoundPage.tsx  # Main Notfoud Page
+    └── Register.tsx  # Main Register Page
 ```
 
 ## Setup
